@@ -1,0 +1,16 @@
+# /etc/systemd/system/nvidia-gpu-exporter.service
+[Unit]
+Description=NVIDIA GPU exporter (Prometheus, :9835)
+After=network.target
+
+[Service]
+Type=simple
+User=YOUR_USER
+ExecStart=/usr/local/bin/nvidia_gpu_exporter \
+  --web.listen-address=0.0.0.0:9835 \
+  --nvidia-smi-command=/usr/lib/wsl/lib/nvidia-smi
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

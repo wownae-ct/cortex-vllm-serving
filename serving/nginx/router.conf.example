@@ -1,0 +1,45 @@
+# cortex-agent LLM 라우터 예시 (nginx, :8008)
+# Gemma 4 12B(GPU, :8010)와 bge-m3(CPU, :8011), GPU exporter(:9835)를 한 포트로 묶어 노출합니다.
+# 실제 설정에서 IP·도메인·대역만 플레이스홀더로 바꾼 것입니다. 사용 시 GPU_HOST, 허용 대역, 도메인을 채우세요.
+#
+# 인증: nginx는 API 키를 넣거나 검사하지 않습니다. 클라이언트의 Authorization 헤더가 vLLM(--api-key)까지 그대로 전달됩니다.
+
+upstream vllm_gemma { server GPU_HOST:8010; keepalive 16; }
+upstream vllm_bge   { server GPU_HOST:8011; keepalive 16; }
+
+server {
+    listen 8008;
+    server_name cortex.example.internal;
+
+    # 접근 제한: 내부망과 VPN 대역만 허용, 그 외는 응답 없이 연결 종료(444)
+    allow INTERNAL_CIDR;
+    allow VPN_CIDR;
+    allow 127.0.0.1;
+    deny all;
+    error_page 403 = @blackhole;
+
+    client_max_body_size 50m;                 # 이미지 입력(멀티모달) 허용
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";           # upstream keepalive 사용
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+    # 임베딩은 CPU bge-m3로
+    location /v1/embeddings {
+        proxy_pass http://vllm_bge;
+    }
+
+    # Prometheus 수집 경로: 한 포트에서 경로로 구분
+    location = /metrics/bge { proxy_pass http://vllm_bge/metrics; }
+    location = /metrics/gpu { proxy_pass http://GPU_HOST:9835/metrics; }
+
+    # 그 외(/v1/chat/completions, /metrics 등)는 Gemma로. 스트리밍(SSE)을 위해 버퍼링을 끔
+    location / {
+        proxy_pass http://vllm_gemma;
+        proxy_buffering off;
+        proxy_read_timeout 600s;
+    }
+
+    location @blackhole { return 444; }
+}

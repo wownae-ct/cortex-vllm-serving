@@ -1,0 +1,10 @@
+# 비밀·환경 파일은 올리지 않습니다
+.env
+.vllm.env
+.vllm_api_key
+*.key
+*.pem
+# 벤치 중 생기는 임시 파일
+bench/gpu/*.csv
+*.bak
+*.bak.json

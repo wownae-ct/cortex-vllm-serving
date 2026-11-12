@@ -1,0 +1,24 @@
+# Prometheus 수집 설정 예시 (원본은 Helm values의 extraScrapeConfigs, scrape_interval 10s).
+# 세 job 모두 라우터(nginx, :8008) 한 곳을 바라보고, 경로로 vLLM 2개와 GPU exporter를 구분합니다.
+# ROUTER_HOST는 실제 주소로 바꿔 쓰세요(저장소에는 내부 주소를 두지 않습니다).
+global:
+  scrape_interval: 10s
+
+scrape_configs:
+  - job_name: vllm-gemma          # Gemma 4 12B (GPU, :8010)
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['ROUTER_HOST:8008']
+        labels: { model: gemma4-12b, device: gpu }
+
+  - job_name: vllm-bge            # bge-m3 (CPU, :8011)
+    metrics_path: /metrics/bge
+    static_configs:
+      - targets: ['ROUTER_HOST:8008']
+        labels: { model: bge-m3, device: cpu }
+
+  - job_name: gpu                 # nvidia_gpu_exporter (:9835)
+    metrics_path: /metrics/gpu
+    static_configs:
+      - targets: ['ROUTER_HOST:8008']
+        labels: { gpu: rtx-5070-ti }

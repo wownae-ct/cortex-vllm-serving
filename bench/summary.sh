@@ -1,0 +1,13 @@
+#!/bin/bash
+# 사용: ./summary.sh            → 전체
+#       ./summary.sh run3       → 3차만
+#       ./summary.sh c16        → 동시 16만
+cd "$(dirname "$0")/results"
+{
+  echo "회차 KV 동시 성공 출력(tok/s) TTFT평균(ms) TTFT_P99(ms) TPOT(ms)"
+  for f in $(ls *.json | grep -- "${1:-.}" | sort -t_ -k3.2n -k1,1 -k2,2); do
+    IFS=_ read run kv c <<< "${f%.json}"
+    jq -r --arg r "$run" --arg k "$kv" --arg c "${c#c}" \
+      '"\($r) \($k) \($c) \(.completed) \(.output_throughput|floor) \(.mean_ttft_ms|floor) \(.p99_ttft_ms|floor) \(.mean_tpot_ms*10|floor/10)"' "$f"
+  done
+} | column -t

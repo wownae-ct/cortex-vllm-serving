@@ -1,0 +1,834 @@
+{
+  "overwrite": true,
+  "dashboard": {
+    "id": null,
+    "uid": "cortex-vllm",
+    "title": "cortex-agent vLLM 서빙",
+    "tags": [
+      "vllm",
+      "cortex"
+    ],
+    "timezone": "browser",
+    "refresh": "10s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "templating": {
+      "list": [
+        {
+          "name": "ds",
+          "label": "Data source",
+          "type": "datasource",
+          "query": "prometheus",
+          "hide": 0
+        }
+      ]
+    },
+    "panels": [
+      {
+        "type": "row",
+        "title": "Gemma 4 12B (GPU, :8010)",
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "panels": []
+      },
+      {
+        "type": "stat",
+        "title": "KV 캐시 사용률",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${ds}"
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 0,
+          "y": 1
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "decimals": 1,
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "orange",
+                  "value": 70
+                },
+                {
+                  "color": "red",
+                  "value": 90
+                }
+              ]
+            }
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ]
+          },
+          "colorMode": "value"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "vllm:kv_cache_usage_perc{job=\"vllm-gemma\"} * 100"
+          }
+        ]
+      },
+      {
+        "type": "stat",
+        "title": "처리 중 요청",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${ds}"
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 6,
+          "y": 1
+        },
+        "fieldConfig": {
+          "defaults": {
+            "decimals": 0
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ]
+          }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "vllm:num_requests_running{job=\"vllm-gemma\"}"
+          }
+        ]
+      },
+      {
+        "type": "stat",
+        "title": "대기 요청",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${ds}"
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 12,
+          "y": 1
+        },
+        "fieldConfig": {
+          "defaults": {
+            "decimals": 0,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 1
+                }
+              ]
+            }
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ]
+          },
+          "colorMode": "value"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "vllm:num_requests_waiting{job=\"vllm-gemma\"}"
+          }
+        ]
+      },
+      {
+        "type": "stat",
+        "title": "생성 속도 (1분 평균)",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${ds}"
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 18,
+          "y": 1
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "decimals": 0,
+            "custom": {}
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ]
+          }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "sum(rate(vllm:generation_tokens_total{job=\"vllm-gemma\"}[1m]))",
+            "legendFormat": "tok/s"
+          }
+        ]
+      },
+      {
+        "type": "timeseries",
+        "title": "KV 캐시 사용률 (%)",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${ds}"
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 5
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100
+          }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "vllm:kv_cache_usage_perc{job=\"vllm-gemma\"} * 100",
+            "legendFormat": "KV cache"
+          }
+        ]
+      },
+      {
+        "type": "timeseries",
+        "title": "요청 수 (처리 중 / 대기)",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${ds}"
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 5
+        },
+        "fieldConfig": {
+          "defaults": {
+            "decimals": 0,
+            "min": 0
+          }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "vllm:num_requests_running{job=\"vllm-gemma\"}",
+            "legendFormat": "running"
+          },
+          {
+            "refId": "B",
+            "expr": "vllm:num_requests_waiting{job=\"vllm-gemma\"}",
+            "legendFormat": "waiting"
+          }
+        ]
+      },
+      {
+        "type": "timeseries",
+        "title": "토큰 처리량 (tok/s)",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${ds}"
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 13
+        },
+        "fieldConfig": {
+          "defaults": {
+            "min": 0
+          }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "sum(rate(vllm:generation_tokens_total{job=\"vllm-gemma\"}[1m]))",
+            "legendFormat": "생성 (output)"
+          },
+          {
+            "refId": "B",
+            "expr": "sum(rate(vllm:prompt_tokens_total{job=\"vllm-gemma\"}[1m]))",
+            "legendFormat": "입력 (prompt)"
+          }
+        ]
+      },
+      {
+        "type": "timeseries",
+        "title": "TTFT - 첫 토큰까지 (P50 / P95)",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${ds}"
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 13
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "min": 0
+          }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "histogram_quantile(0.5, sum by (le) (rate(vllm:time_to_first_token_seconds_bucket{job=\"vllm-gemma\"}[5m])))",
+            "legendFormat": "P50"
+          },
+          {
+            "refId": "B",
+            "expr": "histogram_quantile(0.95, sum by (le) (rate(vllm:time_to_first_token_seconds_bucket{job=\"vllm-gemma\"}[5m])))",
+            "legendFormat": "P95"
+          }
+        ]
+      },
+      {
+        "type": "timeseries",
+        "title": "토큰 간 지연 ITL (P50 / P95)",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${ds}"
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 21
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "min": 0
+          }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "histogram_quantile(0.5, sum by (le) (rate(vllm:inter_token_latency_seconds_bucket{job=\"vllm-gemma\"}[5m])))",
+            "legendFormat": "P50"
+          },
+          {
+            "refId": "B",
+            "expr": "histogram_quantile(0.95, sum by (le) (rate(vllm:inter_token_latency_seconds_bucket{job=\"vllm-gemma\"}[5m])))",
+            "legendFormat": "P95"
+          }
+        ]
+      },
+      {
+        "type": "timeseries",
+        "title": "요청 전체 지연 / 대기열 시간 (P95)",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${ds}"
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 21
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "min": 0
+          }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "histogram_quantile(0.95, sum by (le) (rate(vllm:e2e_request_latency_seconds_bucket{job=\"vllm-gemma\"}[5m])))",
+            "legendFormat": "E2E P95"
+          },
+          {
+            "refId": "B",
+            "expr": "histogram_quantile(0.95, sum by (le) (rate(vllm:request_queue_time_seconds_bucket{job=\"vllm-gemma\"}[5m])))",
+            "legendFormat": "Queue P95"
+          }
+        ]
+      },
+      {
+        "type": "timeseries",
+        "title": "완료 요청 / 선점 (req/s)",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${ds}"
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 29
+        },
+        "fieldConfig": {
+          "defaults": {
+            "min": 0
+          }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "sum(rate(vllm:request_success_total{job=\"vllm-gemma\"}[1m]))",
+            "legendFormat": "완료"
+          },
+          {
+            "refId": "B",
+            "expr": "sum(rate(vllm:num_preemptions_total{job=\"vllm-gemma\"}[1m]))",
+            "legendFormat": "선점 (KV 부족 신호)"
+          }
+        ]
+      },
+      {
+        "type": "timeseries",
+        "title": "프리픽스 캐시 적중률 (%)",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${ds}"
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 29
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100
+          }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "100 * sum(rate(vllm:prefix_cache_hits_total{job=\"vllm-gemma\"}[5m])) / clamp_min(sum(rate(vllm:prefix_cache_queries_total{job=\"vllm-gemma\"}[5m])), 1)",
+            "legendFormat": "hit rate"
+          }
+        ]
+      },
+      {
+        "type": "row",
+        "title": "bge-m3 (CPU, :8011)",
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 37
+        },
+        "panels": []
+      },
+      {
+        "type": "timeseries",
+        "title": "임베딩 요청 (req/s)",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${ds}"
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 0,
+          "y": 38
+        },
+        "fieldConfig": {
+          "defaults": {
+            "min": 0
+          }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "sum(rate(vllm:request_success_total{job=\"vllm-bge\"}[1m]))",
+            "legendFormat": "req/s"
+          }
+        ]
+      },
+      {
+        "type": "timeseries",
+        "title": "임베딩 입력 토큰 (tok/s)",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${ds}"
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 8,
+          "y": 38
+        },
+        "fieldConfig": {
+          "defaults": {
+            "min": 0
+          }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "sum(rate(vllm:prompt_tokens_total{job=\"vllm-bge\"}[1m]))",
+            "legendFormat": "tok/s"
+          }
+        ]
+      },
+      {
+        "type": "timeseries",
+        "title": "임베딩 지연 (P50 / P95)",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${ds}"
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 16,
+          "y": 38
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "min": 0
+          }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "histogram_quantile(0.5, sum by (le) (rate(vllm:e2e_request_latency_seconds_bucket{job=\"vllm-bge\"}[5m])))",
+            "legendFormat": "P50"
+          },
+          {
+            "refId": "B",
+            "expr": "histogram_quantile(0.95, sum by (le) (rate(vllm:e2e_request_latency_seconds_bucket{job=\"vllm-bge\"}[5m])))",
+            "legendFormat": "P95"
+          }
+        ]
+      },
+      {
+        "type": "row",
+        "title": "GPU (RTX 5070 Ti)",
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 46
+        },
+        "panels": []
+      },
+      {
+        "type": "stat",
+        "title": "GPU 온도",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${ds}"
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 0,
+          "y": 47
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "celsius",
+            "decimals": 0,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "orange",
+                  "value": 70
+                },
+                {
+                  "color": "red",
+                  "value": 83
+                }
+              ]
+            }
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ]
+          },
+          "colorMode": "value"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "nvidia_smi_temperature_gpu{job=\"gpu\"}"
+          }
+        ]
+      },
+      {
+        "type": "stat",
+        "title": "전력",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${ds}"
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 6,
+          "y": 47
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "watt",
+            "decimals": 0
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ]
+          }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "nvidia_smi_power_draw_watts{job=\"gpu\"}"
+          }
+        ]
+      },
+      {
+        "type": "stat",
+        "title": "GPU 사용률",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${ds}"
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 12,
+          "y": 47
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "decimals": 0,
+            "min": 0,
+            "max": 1
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ]
+          }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "nvidia_smi_utilization_gpu_ratio{job=\"gpu\"}"
+          }
+        ]
+      },
+      {
+        "type": "stat",
+        "title": "VRAM 사용",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${ds}"
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 18,
+          "y": 47
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes",
+            "decimals": 1
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ]
+          }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "nvidia_smi_memory_used_bytes{job=\"gpu\"}"
+          }
+        ]
+      },
+      {
+        "type": "timeseries",
+        "title": "GPU 온도 (°C)",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${ds}"
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 51
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "celsius",
+            "min": 20
+          }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "nvidia_smi_temperature_gpu{job=\"gpu\"}",
+            "legendFormat": "온도"
+          }
+        ]
+      },
+      {
+        "type": "timeseries",
+        "title": "전력 (W)",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${ds}"
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 51
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "watt",
+            "min": 0
+          }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "nvidia_smi_power_draw_watts{job=\"gpu\"}",
+            "legendFormat": "사용"
+          },
+          {
+            "refId": "B",
+            "expr": "nvidia_smi_enforced_power_limit_watts{job=\"gpu\"}",
+            "legendFormat": "한도"
+          }
+        ]
+      },
+      {
+        "type": "timeseries",
+        "title": "GPU 사용률 (%)",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${ds}"
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 59
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "min": 0,
+            "max": 1
+          }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "nvidia_smi_utilization_gpu_ratio{job=\"gpu\"}",
+            "legendFormat": "사용률"
+          }
+        ]
+      },
+      {
+        "type": "timeseries",
+        "title": "VRAM (사용 / 전체)",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${ds}"
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 59
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes",
+            "min": 0
+          }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "nvidia_smi_memory_used_bytes{job=\"gpu\"}",
+            "legendFormat": "사용"
+          },
+          {
+            "refId": "B",
+            "expr": "nvidia_smi_memory_total_bytes{job=\"gpu\"}",
+            "legendFormat": "전체"
+          }
+        ]
+      }
+    ]
+  }
+}

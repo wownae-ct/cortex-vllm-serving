@@ -1,0 +1,21 @@
+name: lint
+on: [push, pull_request]
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: shellcheck
+        run: |
+          sudo apt-get update -y && sudo apt-get install -y shellcheck jq
+          shellcheck serving/*.sh bench/*.sh
+      - name: JSON 유효성
+        run: |
+          jq -e . monitoring/grafana/vllm-dashboard.json > /dev/null
+          for f in bench/results/*.json; do jq -e . "$f" > /dev/null; done
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

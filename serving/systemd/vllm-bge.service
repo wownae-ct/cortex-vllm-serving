@@ -1,0 +1,19 @@
+# /etc/systemd/system/vllm-bge.service
+[Unit]
+Description=vLLM bge-m3 (CPU, :8011)
+After=network.target
+
+[Service]
+Type=simple
+User=YOUR_USER
+EnvironmentFile=/mnt/ai/.vllm.env
+Environment=LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libtcmalloc_minimal.so.4
+Environment=VLLM_CPU_KVCACHE_SPACE=2
+Environment=CUDA_VISIBLE_DEVICES=
+ExecStartPre=/bin/bash -c 'for i in $(seq 1 30); do [ -d /mnt/ai/models/bge-m3 ] && exit 0; sleep 2; done; exit 1'
+ExecStart=/mnt/ai/scripts/vllm-bge.sh
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,17 @@
+# /etc/systemd/system/vllm-gemma.service
+[Unit]
+Description=vLLM Gemma 4 12B (GPU, :8010)
+After=network.target
+
+[Service]
+Type=simple
+User=YOUR_USER
+EnvironmentFile=/mnt/ai/.vllm.env
+# /mnt/ai는 wsl.conf boot 스크립트로 마운트되므로 모델 폴더가 보일 때까지 대기
+ExecStartPre=/bin/bash -c 'for i in $(seq 1 30); do [ -d /mnt/ai/models/gemma-4-12B-it-qat-w4a16-ct ] && exit 0; sleep 2; done; exit 1'
+ExecStart=/mnt/ai/scripts/vllm-gemma.sh
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target
